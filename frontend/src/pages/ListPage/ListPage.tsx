@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react"
+import { Link } from "react-router-dom"
 import { useGetAdsQuery } from "../../app/shared/api/adsApi"
 import { GetAdsQuery, Advertisement } from "../../types/apiTypes"
 
@@ -10,15 +11,15 @@ export default function ListPage() {
   const [sortOrder, setSortOrder] = useState<GetAdsQuery["sortOrder"]>("desc")
   const [page, setPage] = useState(1)
 
-  // Параметры запроса
+  // Параметры запроса к API (категорию фильтруем локально)
   const queryParams: GetAdsQuery = {
     page,
     limit: 10,
     search: search || undefined,
     status: statusFilter.length ? (statusFilter as any) : undefined,
-    categoryId: undefined, // Мы фильтруем локально по category (строка)
+    categoryId: undefined,
     sortBy,
-    sortOrder, 
+    sortOrder,
   }
 
   const { data, isLoading, isError } = useGetAdsQuery(queryParams)
@@ -29,7 +30,7 @@ export default function ListPage() {
     return Array.from(new Set(data.ads.map(ad => ad.category)))
   }, [data])
 
-  // Фильтруем локально по категории и статусу
+  // Фильтрация локально по статусу, категории и поиску
   const filteredAds = useMemo(() => {
     if (!data) return []
     return data.ads.filter(ad => {
@@ -131,41 +132,46 @@ export default function ListPage() {
         }}
       >
         {filteredAds.map((ad: Advertisement) => (
-          <div
+          <Link
+            to={`/item/${ad.id}`}
             key={ad.id}
-            style={{
-              border: "1px solid #ccc",
-              borderRadius: "5px",
-              overflow: "hidden",
-            }}
+            style={{ textDecoration: "none", color: "inherit" }}
           >
-            <img
-              src={ad.images[0] || "https://via.placeholder.com/200x150"}
-              alt={ad.title}
-              style={{ width: "100%", height: "150px", objectFit: "cover" }}
-            />
-            <div style={{ padding: "10px" }}>
-              <h3>{ad.title}</h3>
-              <p>Цена: {ad.price} ₽</p>
-              <p>Категория: {ad.category}</p>
-              <p>Дата создания: {new Date(ad.createdAt).toLocaleDateString()}</p>
-              <p>
-                Статус:{" "}
-                <strong>
-                  {ad.status === "pending"
-                    ? "На модерации"
-                    : ad.status === "approved"
-                    ? "Одобрено"
-                    : ad.status === "rejected"
-                    ? "Отклонено"
-                    : "Черновик"}
-                </strong>
-              </p>
-              {ad.priority === "urgent" && (
-                <p style={{ color: "red" }}>Срочно</p>
-              )}
+            <div
+              style={{
+                border: "1px solid #ccc",
+                borderRadius: "5px",
+                overflow: "hidden",
+              }}
+            >
+              <img
+                src={ad.images[0] || "https://via.placeholder.com/200x150"}
+                alt={ad.title}
+                style={{ width: "100%", height: "150px", objectFit: "cover" }}
+              />
+              <div style={{ padding: "10px" }}>
+                <h3>{ad.title}</h3>
+                <p>Цена: {ad.price} ₽</p>
+                <p>Категория: {ad.category}</p>
+                <p>Дата создания: {new Date(ad.createdAt).toLocaleDateString()}</p>
+                <p>
+                  Статус:{" "}
+                  <strong>
+                    {ad.status === "pending"
+                      ? "На модерации"
+                      : ad.status === "approved"
+                      ? "Одобрено"
+                      : ad.status === "rejected"
+                      ? "Отклонено"
+                      : "Черновик"}
+                  </strong>
+                </p>
+                {ad.priority === "urgent" && (
+                  <p style={{ color: "red" }}>Срочно</p>
+                )}
+              </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
