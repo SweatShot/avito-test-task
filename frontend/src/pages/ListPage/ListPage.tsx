@@ -10,32 +10,39 @@ export default function ListPage() {
   const [sortOrder, setSortOrder] = useState<GetAdsQuery["sortOrder"]>("desc")
   const [page, setPage] = useState(1)
 
-  // Составляем параметры запроса
+  // Параметры запроса
   const queryParams: GetAdsQuery = {
     page,
     limit: 10,
     search: search || undefined,
     status: statusFilter.length ? (statusFilter as any) : undefined,
-    categoryId: categoryFilter ? Number(categoryFilter) : undefined,
+    categoryId: undefined, // Мы фильтруем локально по category (строка)
     sortBy,
-    sortOrder,
+    sortOrder, 
   }
 
-  // Получаем данные с сервера
   const { data, isLoading, isError } = useGetAdsQuery(queryParams)
 
-  // Уникальные категории для фильтра
+  // Уникальные категории
   const categories = useMemo(() => {
     if (!data) return []
-    const unique = Array.from(new Set(data.ads.map(ad => ad.category)))
-    return unique
+    return Array.from(new Set(data.ads.map(ad => ad.category)))
   }, [data])
+
+  // Фильтруем локально по категории и статусу
+  const filteredAds = useMemo(() => {
+    if (!data) return []
+    return data.ads.filter(ad => {
+      const matchStatus = statusFilter.length ? statusFilter.includes(ad.status) : true
+      const matchCategory = categoryFilter ? ad.category === categoryFilter : true
+      const matchSearch = search ? ad.title.toLowerCase().includes(search.toLowerCase()) : true
+      return matchStatus && matchCategory && matchSearch
+    })
+  }, [data, statusFilter, categoryFilter, search])
 
   const toggleStatus = (status: string) => {
     setStatusFilter(prev =>
-      prev.includes(status)
-        ? prev.filter(s => s !== status)
-        : [...prev, status],
+      prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status],
     )
   }
 
@@ -63,7 +70,7 @@ export default function ListPage() {
         />
 
         <span style={{ marginRight: "10px" }}>Статус:</span>
-        {["pending", "approved", "rejected"].map(s => (
+        {["pending", "approved", "rejected", "draft"].map(s => (
           <label key={s} style={{ marginRight: "10px" }}>
             <input
               type="checkbox"
@@ -123,7 +130,7 @@ export default function ListPage() {
           gap: "15px",
         }}
       >
-        {data?.ads.map((ad: Advertisement) => (
+        {filteredAds.map((ad: Advertisement) => (
           <div
             key={ad.id}
             style={{
@@ -149,7 +156,9 @@ export default function ListPage() {
                     ? "На модерации"
                     : ad.status === "approved"
                     ? "Одобрено"
-                    : "Отклонено"}
+                    : ad.status === "rejected"
+                    ? "Отклонено"
+                    : "Черновик"}
                 </strong>
               </p>
               {ad.priority === "urgent" && (

@@ -11,7 +11,6 @@ export const api = createApi({
   reducerPath: "splitApi",
   baseQuery: baseQueryWithRetry,
   refetchOnMountOrArgChange: true,
-  // 👇 вот это ключевая строка
   tagTypes: ["Ads", "Stats", "Moderator"],
   endpoints: () => ({}),
 })
