@@ -11,7 +11,6 @@ export default function ListPage() {
   const [sortOrder, setSortOrder] = useState<GetAdsQuery["sortOrder"]>("desc")
   const [page, setPage] = useState(1)
 
-  // Параметры запроса к API (категорию фильтруем локально)
   const queryParams: GetAdsQuery = {
     page,
     limit: 10,
@@ -24,13 +23,11 @@ export default function ListPage() {
 
   const { data, isLoading, isError } = useGetAdsQuery(queryParams)
 
-  // Уникальные категории
   const categories = useMemo(() => {
     if (!data) return []
     return Array.from(new Set(data.ads.map(ad => ad.category)))
   }, [data])
 
-  // Фильтрация локально по статусу, категории и поиску
   const filteredAds = useMemo(() => {
     if (!data) return []
     return data.ads.filter(ad => {
@@ -59,6 +56,15 @@ export default function ListPage() {
   return (
     <div style={{ padding: "20px" }}>
       <h1>Список объявлений</h1>
+
+      {/* Кнопка перехода на статистику модератора */}
+      <div style={{ marginBottom: "20px" }}>
+        <Link to="/stats">
+          <button style={{ padding: "5px 10px", cursor: "pointer" }}>
+            Статистика модератора
+          </button>
+        </Link>
+      </div>
 
       {/* Фильтры */}
       <div style={{ margin: "15px 0" }}>
@@ -119,7 +125,6 @@ export default function ListPage() {
         </button>
       </div>
 
-      {/* Состояния загрузки */}
       {isLoading && <p>Загрузка...</p>}
       {isError && <p>Ошибка при загрузке объявлений.</p>}
 
@@ -175,7 +180,6 @@ export default function ListPage() {
         ))}
       </div>
 
-      {/* Пагинация */}
       {data?.pagination && (
         <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
           <button
