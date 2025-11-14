@@ -1,10 +1,9 @@
-import { FC } from "react";
-import "./Loader.css";
+import styles from "./Loader.module.css";
 
-const Loader: FC = () => {
+const Loader = () => {
   return (
-    <div className="preloader-container">
-      <div className="spinner" />
+    <div className={styles.preloaderContainer}>
+      <div className={styles.spinner}></div>
     </div>
   );
 };
