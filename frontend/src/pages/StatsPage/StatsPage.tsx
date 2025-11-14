@@ -1,80 +1,57 @@
-import { Card, Row, Col, Spin, Button } from "antd";
-import { Column, Pie } from "@ant-design/charts";
-import {
-  useGetSummaryStatsQuery,
-  useGetActivityChartQuery,
-  useGetDecisionsChartQuery,
-  useGetCategoriesChartQuery,
-} from "../../app/shared/api/statsApi";
-import { useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Card, Row, Col, Spin, Button } from "antd"
+import { Column, Pie } from "@ant-design/charts"
+import { useStats } from "../../hooks/useStats" 
+import { useNavigate } from "react-router-dom"
 
 export default function StatsPage() {
-  const { data: summary, isLoading: loadingSummary } = useGetSummaryStatsQuery();
-  const { data: activity, isLoading: loadingActivity } = useGetActivityChartQuery();
-  const { data: decisions, isLoading: loadingDecisions } = useGetDecisionsChartQuery();
-  const { data: categories, isLoading: loadingCategories } = useGetCategoriesChartQuery();
+  const navigate = useNavigate()
+  const {
+    summary,
+    activityData,
+    decisionsData,
+    categoriesData,
+    formattedAverageTime,
+    loading,
+  } = useStats()
 
-  const activityData = useMemo(() => {
-    if (!activity) return [];
-    return activity.flatMap(day => [
-      { date: day.date, type: "Одобрено", value: day.approved },
-      { date: day.date, type: "Отклонено", value: day.rejected },
-      { date: day.date, type: "На доработку", value: day.requestChanges },
-    ]);
-  }, [activity]);
-
-  const decisionsData = useMemo(() => {
-    if (!decisions) return [];
-    return [
-      { type: "Одобрено", value: decisions.approved },
-      { type: "Отклонено", value: decisions.rejected },
-      { type: "На доработку", value: decisions.requestChanges },
-    ];
-  }, [decisions]);
-
-  const categoriesData = useMemo(() => {
-    if (!categories) return [];
-    return Object.entries(categories).map(([name, value]) => ({ type: name, value }));
-  }, [categories]);
-
-  if (loadingSummary || loadingActivity || loadingDecisions || loadingCategories) {
-    return <Spin size="large" style={{ margin: 50 }} />;
-  }
-
-  if (!summary) {
-    return <p>Ошибка при загрузке данных</p>;
+  if (loading) {
+    return <Spin size="large" style={{ margin: 50 }} />
   }
 
   return (
     <div style={{ padding: 20 }}>
-      <div style={{ marginBottom: 20 }}>
-        <Link to="/">
-          <Button type="primary">← Назад к списку объявлений</Button>
-        </Link>
-      </div>
+      {/* Кнопка Назад */}
+      <Button type="default" onClick={() => navigate("/list")}>
+        ← Назад к списку
+      </Button>
 
-      <h1>Статистика модератора</h1>
+      <h1 style={{ marginTop: 20 }}>Статистика модератора</h1>
 
+      {/* Карточки с метриками */}
       <Row gutter={[20, 20]} style={{ marginTop: 20 }}>
         <Col span={6}>
           <Card title="Всего проверено">
-            <p>Сегодня: {summary.totalReviewedToday}</p>
-            <p>Неделя: {summary.totalReviewedThisWeek}</p>
-            <p>Месяц: {summary.totalReviewedThisMonth}</p>
+            <p>Сегодня: {summary.today?.totalReviewed ?? 0}</p>
+            <p>Неделя: {summary.week?.totalReviewed ?? 0}</p>
+            <p>Месяц: {summary.month?.totalReviewed ?? 0}</p>
           </Card>
         </Col>
         <Col span={6}>
-          <Card title="Процент одобренных">{summary.approvedPercentage.toFixed(2)}%</Card>
+          <Card title="Процент одобренных">
+            {summary.today?.approvedPercentage?.toFixed(2) ?? 0}%
+          </Card>
         </Col>
         <Col span={6}>
-          <Card title="Процент отклоненных">{summary.rejectedPercentage.toFixed(2)}%</Card>
+          <Card title="Процент отклоненных">
+            {summary.today?.rejectedPercentage?.toFixed(2) ?? 0}%
+          </Card>
         </Col>
         <Col span={6}>
-          <Card title="Среднее время проверки">{summary.averageReviewTime.toFixed(2)} мин</Card>
+          <Card title="Среднее время проверки">{formattedAverageTime}</Card>
         </Col>
       </Row>
 
+      {/* Графики */}
       <Row gutter={[20, 20]} style={{ marginTop: 40 }}>
         <Col span={12}>
           <Card title="Активность по дням">
@@ -96,7 +73,12 @@ export default function StatsPage() {
               angleField="value"
               colorField="type"
               radius={0.8}
-              label={{ type: "spider", labelHeight: 28 }}
+              label={{
+                type: "spider",
+                labelHeight: 28,
+                content: (item: { type: string; value: number }) =>
+                  `${item.type}: ${item.value}`,
+              }}
             />
           </Card>
         </Col>
@@ -108,11 +90,16 @@ export default function StatsPage() {
               angleField="value"
               colorField="type"
               radius={0.8}
-              label={{ type: "spider", labelHeight: 28 }}
+              label={{
+                type: "spider",
+                labelHeight: 28,
+                content: (item: { type: string; value: number }) =>
+                  `${item.type}: ${item.value}`,
+              }}
             />
           </Card>
         </Col>
       </Row>
     </div>
-  );
+  )
 }

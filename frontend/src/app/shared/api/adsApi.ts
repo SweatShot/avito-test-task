@@ -22,12 +22,14 @@ export const adsApi = api.injectEndpoints({
       providesTags: [{ type: "Ads" }],
     }),
 
+    // Получить все ID объявлений для навигации
     getAllIds: builder.query<number[], void>({
       query: () => ({
         url: "/ads",
         params: { limit: 10000, fields: "id" },
       }),
-      transformResponse: (r: any) => r.ads.map((a: any) => a.id),
+      transformResponse: (response: any) =>
+        response.ads.map((ad: any) => ad.id),
       providesTags: [{ type: "Ads" }],
     }),
 
@@ -75,14 +77,13 @@ export const adsApi = api.injectEndpoints({
       invalidatesTags: [{ type: "Ads" }],
     }),
   }),
-
   overrideExisting: false,
 })
 
 export const {
   useGetAdsQuery,
   useGetAdByIdQuery,
-  useGetAllIdsQuery,   
+  useGetAllIdsQuery,
   useApproveAdMutation,
   useRejectAdMutation,
   useRequestChangesMutation,

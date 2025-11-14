@@ -11,7 +11,6 @@ export default function ListPage(): JSX.Element {
   const [sortOrder, setSortOrder] = useState<GetAdsQuery["sortOrder"]>("desc");
   const [page, setPage] = useState(1);
 
-  // Параметры запроса к API
   const queryParams: GetAdsQuery = {
     page,
     limit: 10,
@@ -22,21 +21,17 @@ export default function ListPage(): JSX.Element {
     sortOrder,
   };
 
-  // Получаем только первые 10 объявлений для отображения
   const { data, isLoading, isError } = useGetAdsQuery(queryParams);
-
-  // Получаем все ID объявлений для навигации в ItemPage
   const { data: allIds } = useGetAllIdsQuery();
-
   const ads = data?.ads ?? [];
+  const allAdsIds = allIds ?? [];
 
-  // Уникальные категории для фильтра
+  // уникальные категории
   const categories: string[] = useMemo(() => {
-    if (!ads) return [];
     return Array.from(new Set(ads.map((ad) => ad.category))).filter(Boolean);
   }, [ads]);
 
-  // Локальная фильтрация
+  // локальная фильтрация
   const filteredAds: Advertisement[] = useMemo(() => {
     return ads.filter((ad) => {
       const matchStatus = statusFilter.length ? statusFilter.includes(ad.status) : true;
@@ -60,9 +55,6 @@ export default function ListPage(): JSX.Element {
     setSortOrder("desc");
     setPage(1);
   };
-
-  // Массив всех ID для передачи в ItemPage
-  const allAdsIds = allIds ?? [];
 
   return (
     <div style={{ padding: "20px" }}>
@@ -88,9 +80,7 @@ export default function ListPage(): JSX.Element {
         <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={{ marginRight: "10px", padding: "5px" }}>
           <option value="">Все категории</option>
           {categories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
+            <option key={cat} value={cat}>{cat}</option>
           ))}
         </select>
 
@@ -105,11 +95,8 @@ export default function ListPage(): JSX.Element {
           <option value="asc">По возрастанию</option>
         </select>
 
-        <button onClick={resetFilters} style={{ padding: "5px 10px" }}>
-          Сбросить
-        </button>
+        <button onClick={resetFilters} style={{ padding: "5px 10px" }}>Сбросить</button>
 
-        {/* Кнопка перейти на страницу статистики */}
         <Link to="/stats" style={{ marginLeft: 12 }}>
           <button>Статистика модератора</button>
         </Link>
@@ -130,11 +117,33 @@ export default function ListPage(): JSX.Element {
           <Link
             key={ad.id}
             to={`/item/${ad.id}`}
-            state={{ adsIds: allAdsIds }} // передаем полный массив ID
+            state={{ adsIds: allAdsIds }}
             style={{ textDecoration: "none", color: "inherit" }}
           >
-            <div style={{ border: "1px solid #ccc", borderRadius: 5, overflow: "hidden" }}>
-              <img src={ad.images[0] || "https://via.placeholder.com/200x150"} alt={ad.title} style={{ width: "100%", height: 150, objectFit: "cover" }} />
+            <div style={{ border: "1px solid #ccc", borderRadius: 5, overflow: "hidden", position: "relative" }}>
+              <img
+                src={ad.images[0] || "https://via.placeholder.com/200x150"}
+                alt={ad.title}
+                style={{ width: "100%", height: 150, objectFit: "cover" }}
+              />
+
+              {/* Индикатор приоритета */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: 10,
+                  right: 10,
+                  backgroundColor: ad.priority === "urgent" ? "red" : "green",
+                  color: "white",
+                  padding: "2px 6px",
+                  borderRadius: 4,
+                  fontSize: 12,
+                  fontWeight: "bold",
+                }}
+              >
+                {ad.priority === "urgent" ? "Срочно" : "Обычный"}
+              </div>
+
               <div style={{ padding: 10 }}>
                 <h3>{ad.title}</h3>
                 <p>Цена: {ad.price} ₽</p>
@@ -152,7 +161,6 @@ export default function ListPage(): JSX.Element {
                       : "Черновик"}
                   </strong>
                 </p>
-                {ad.priority === "urgent" && <p style={{ color: "red" }}>Срочно</p>}
               </div>
             </div>
           </Link>
@@ -162,15 +170,11 @@ export default function ListPage(): JSX.Element {
       {/* Серверная пагинация */}
       {data?.pagination && (
         <div style={{ marginTop: 20, display: "flex", gap: 10, alignItems: "center" }}>
-          <button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-            Назад
-          </button>
+          <button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>Назад</button>
           <span>
             Страница {data.pagination.currentPage} из {data.pagination.totalPages} (Всего: {data.pagination.totalItems})
           </span>
-          <button disabled={page === data.pagination.totalPages} onClick={() => setPage((p) => p + 1)}>
-            Вперед
-          </button>
+          <button disabled={page === data.pagination.totalPages} onClick={() => setPage((p) => p + 1)}>Вперед</button>
         </div>
       )}
     </div>
