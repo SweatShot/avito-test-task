@@ -12,13 +12,22 @@ import {
 
 export const adsApi = api.injectEndpoints({
   endpoints: builder => ({
-    // Получить список объявлений
+    // Получить список объявлений с пагинацией/фильтрами
     getAds: builder.query<GetAdsResponse, GetAdsQuery | void>({
       query: params => ({
         url: `/ads`,
         method: "GET",
         params: params ?? {},
       }),
+      providesTags: [{ type: "Ads" }],
+    }),
+
+    getAllIds: builder.query<number[], void>({
+      query: () => ({
+        url: "/ads",
+        params: { limit: 10000, fields: "id" },
+      }),
+      transformResponse: (r: any) => r.ads.map((a: any) => a.id),
       providesTags: [{ type: "Ads" }],
     }),
 
@@ -53,7 +62,7 @@ export const adsApi = api.injectEndpoints({
       invalidatesTags: [{ type: "Ads" }],
     }),
 
-    // Запросить изменения
+    // Запросить доработки
     requestChanges: builder.mutation<
       RequestChangesResponse,
       { id: number } & RequestChangesRequest
@@ -66,12 +75,14 @@ export const adsApi = api.injectEndpoints({
       invalidatesTags: [{ type: "Ads" }],
     }),
   }),
+
   overrideExisting: false,
 })
 
 export const {
   useGetAdsQuery,
   useGetAdByIdQuery,
+  useGetAllIdsQuery,   
   useApproveAdMutation,
   useRejectAdMutation,
   useRequestChangesMutation,
