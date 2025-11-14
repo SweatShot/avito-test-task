@@ -1,99 +1,95 @@
-import { useState } from "react"
-import { useParams } from "react-router-dom"
-import {
-  useGetAdByIdQuery,
-  useGetAllIdsQuery,
-} from "../../app/shared/api/adsApi"
-import Loader from "../../components/Loader/Loader"
-import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts"
-import { ReasonType, useModerationActions } from "./hooks/useModerationActions"
-import { useItemNavigation } from "./hooks/useItemNavigation"
+import { useParams } from "react-router-dom";
+import { useGetAdByIdQuery, useGetAllIdsQuery } from "../../app/shared/api/adsApi";
 
-import ModerationModal from "./components/ModerationModal"
-import ModerationButtons from "./components/ModerationButtons"
-import NavigationButtons from "../../components/NavigationButtons/NavigationButtons"
-import Gallery from "./components/Gallery"
-import InfoSection from "../../components/InfoSection/InfoSection"
-import { useAdTables } from "./hooks/useAdTables"
+import Loader from "../../components/Loader/Loader";
+import InfoSection from "../../components/InfoSection/InfoSection";
+import ModerationModal from "./components/ModerationModal";
+import ModerationButtons from "./components/ModerationButtons";
+
+import { useItemNavigation } from "./hooks/useItemNavigation";
+import { useModerationActions } from "./hooks/useModerationActions";
+
+import { useModerationDialogs } from "./hooks/useModerationDialogs";
+import { useModerationHotkeys } from "./hooks/useModerationHotkeys";
+
+import AdHeader from "./components/AdHeader";
 
 export default function ItemPage() {
-  const { id } = useParams<{ id: string }>()
-  const adId = Number(id)
+  const { id } = useParams<{ id: string }>();
+  const adId = Number(id);
 
-  const [showRejectModal, setShowRejectModal] = useState(false)
-  const [showChangesModal, setShowChangesModal] = useState(false)
-  const [reason, setReason] = useState<ReasonType>("Запрещенный товар")
-  const [comment, setComment] = useState("")
+  const { data: allIds } = useGetAllIdsQuery();
+  const { data: ad, isLoading, isError } = useGetAdByIdQuery(adId);
 
-  const { data: allIds } = useGetAllIdsQuery()
-  const { data: ad, isLoading, isError } = useGetAdByIdQuery(adId)
+  const {
+    showRejectModal,
+    showChangesModal,
+    openReject,
+    openChanges,
+    closeAll,
+    reason,
+    comment,
+    setReason,
+    setComment,
+  } = useModerationDialogs();
+
+  const { goPrev, goNext, goList, currentIndex } = useItemNavigation(adId, allIds);
 
   const { handleApprove, handleReject, handleRequestChanges } =
-    useModerationActions(adId, reason, comment, () => {
-      setShowRejectModal(false)
-      setShowChangesModal(false)
-    })
+    useModerationActions(adId, reason, comment, closeAll);
 
-  const { goPrev, goNext, goList, currentIndex } = useItemNavigation(
-    adId,
-    allIds,
-  )
+  useModerationHotkeys({
+    onApprove: handleApprove,
+    onReject: openReject,
+    onNext: goNext,
+    onPrev: goPrev,
+    onList: goList,
+  });
 
-  useKeyboardShortcuts({
-    approve: handleApprove,
-    reject: () => setShowRejectModal(true),
-    next: goNext,
-    prev: goPrev,
-    focusSearch: goList,
-  })
+  if (isLoading) return <Loader />;
+  if (isError || !ad) return <p>Ошибка загрузки</p>;
 
-  if (isLoading) return <Loader />
-  if (isError || !ad) return <p>Ошибка загрузки объявления</p>
-
-  const { characteristicsRows, sellerRows, moderationRows } = useAdTables(ad)
+  const characteristicsRows = Object.entries(ad.characteristics).map(([k, v]) => [k, v]);
+  const sellerRows = [
+    ["Имя", ad.seller.name],
+    ["Рейтинг", ad.seller.rating],
+    ["Количество объявлений", ad.seller.totalAds],
+    ["Дата регистрации", new Date(ad.seller.registeredAt).toLocaleDateString()],
+  ];
+  const moderationRows = ad.moderationHistory.map(h => [
+    h.moderatorName,
+    new Date(h.timestamp).toLocaleString(),
+    h.action,
+    h.comment || "-",
+  ]);
 
   return (
     <div style={{ padding: 20 }}>
-      {/* Навигация */}
-      <NavigationButtons
-        onGoList={goList}
-        onGoPrev={goPrev}
-        onGoNext={goNext}
-        disablePrev={currentIndex <= 0}
-        disableNext={currentIndex >= (allIds?.length ?? 0) - 1}
+      <AdHeader
+        ad={ad}
+        navigation={{
+          goPrev,
+          goNext,
+          goList,
+          currentIndex,
+          total: allIds?.length ?? 0,
+        }}
       />
 
-      <h1>{ad.title}</h1>
-
-      {/* Галерея */}
-      <Gallery images={ad.images} title={ad.title} />
-
-      <p>{ad.description}</p>
-    
-      <InfoSection
-        title="Характеристики"
-        headers={["Название", "Значение"]}
-        rows={characteristicsRows}
-      />
-      <InfoSection
-        title="Информация о продавце"
-        headers={["Поле", "Значение"]}
-        rows={sellerRows}
-      />
+      <InfoSection title="Характеристики" headers={["Название", "Значение"]} rows={characteristicsRows} />
+      <InfoSection title="Продавец" headers={["Поле", "Значение"]} rows={sellerRows} />
       <InfoSection
         title="История модерации"
-        headers={["Модератор", "Дата и время", "Действие", "Комментарий"]}
+        headers={["Модератор", "Дата", "Действие", "Комментарий"]}
         rows={moderationRows}
       />
 
-      {/* Панель действий */}
       <ModerationButtons
         onApprove={handleApprove}
-        onReject={() => setShowRejectModal(true)}
-        onRequestChanges={() => setShowChangesModal(true)}
+        onReject={openReject}
+        onRequestChanges={openChanges}
       />
 
-      {/* Модалки */}
       <ModerationModal
         show={showRejectModal}
         type="reject"
@@ -102,8 +98,9 @@ export default function ItemPage() {
         onReasonChange={setReason}
         onCommentChange={setComment}
         onConfirm={handleReject}
-        onCancel={() => setShowRejectModal(false)}
+        onCancel={closeAll}
       />
+
       <ModerationModal
         show={showChangesModal}
         type="changes"
@@ -112,8 +109,8 @@ export default function ItemPage() {
         onReasonChange={setReason}
         onCommentChange={setComment}
         onConfirm={handleRequestChanges}
-        onCancel={() => setShowChangesModal(false)}
+        onCancel={closeAll}
       />
     </div>
-  )
+  );
 }
