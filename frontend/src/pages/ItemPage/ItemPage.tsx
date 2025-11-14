@@ -7,6 +7,7 @@ import {
   useRequestChangesMutation,
   useGetAllIdsQuery,
 } from "../../app/shared/api/adsApi";
+import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 
 const reasons = [
   "Запрещенный товар",
@@ -25,17 +26,14 @@ export default function ItemPage() {
   const location = useLocation();
   const adId = Number(id);
 
-  // прием ID массива (если был передан из списка)
   const adsIdsFromList: number[] | undefined =
     (location.state as { adsIds?: number[] } | undefined)?.adsIds;
 
-  // если не передан — загружаем все ID
   const { data: allIds } = useGetAllIdsQuery(undefined, {
     skip: Boolean(adsIdsFromList),
   });
 
   const adsIds: number[] | undefined = adsIdsFromList || allIds;
-
   const { data: ad, isLoading, isError } = useGetAdByIdQuery(adId);
 
   const [approveAd] = useApproveAdMutation();
@@ -44,12 +42,8 @@ export default function ItemPage() {
 
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showChangesModal, setShowChangesModal] = useState(false);
-
   const [reason, setReason] = useState<ReasonType>("Запрещенный товар");
   const [comment, setComment] = useState("");
-
-  if (isLoading) return <p>Загрузка...</p>;
-  if (isError || !ad) return <p>Ошибка загрузки объявления</p>;
 
   const currentIndex = adsIds?.findIndex((i) => i === adId) ?? -1;
 
@@ -81,23 +75,40 @@ export default function ItemPage() {
     setShowChangesModal(false);
   };
 
-  return (
-    <div style={{ padding: "20px" }}>
-      {/* Навигационные кнопки */}
-      <div
-        style={{
-          marginBottom: 10,
-          display: "flex",
-          gap: 10,
-          alignItems: "center",
-        }}
-      >
-        <button onClick={() => navigate("/list")}>Назад к списку</button>
+  // Хук горячих клавиш
+  useKeyboardShortcuts({
+    approve: handleApprove,
+    reject: () => setShowRejectModal(true),
+    next: goNext,
+    prev: goPrev,
+    focusSearch: () => {
+      navigate("/list");
+      setTimeout(() => {
+        const searchInput = document.querySelector<HTMLInputElement>(
+          'input[placeholder*="Поиск"]'
+        );
+        searchInput?.focus();
+      }, 50);
+    },
+  });
 
+  if (isLoading) return <p>Загрузка...</p>;
+  if (isError || !ad) return <p>Ошибка загрузки объявления</p>;
+
+  return (
+    <div style={{ padding: 20 }}>
+      {/* Навигация */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+        <button
+          onClick={() => {
+            navigate("/list");
+          }}
+        >
+          Назад к списку
+        </button>
         <button onClick={goPrev} disabled={!adsIds || currentIndex <= 0}>
           ← Предыдущее
         </button>
-
         <button
           onClick={goNext}
           disabled={!adsIds || currentIndex >= adsIds.length - 1}
@@ -171,21 +182,19 @@ export default function ItemPage() {
       </table>
 
       {/* Панель действий */}
-      <div style={{ marginTop: 20 }}>
+      <div style={{ marginTop: 20, display: "flex", gap: 10 }}>
         <button
-          style={{ backgroundColor: "green", color: "white", marginRight: 10 }}
+          style={{ backgroundColor: "green", color: "white" }}
           onClick={handleApprove}
         >
           Одобрить
         </button>
-
         <button
-          style={{ backgroundColor: "red", color: "white", marginRight: 10 }}
+          style={{ backgroundColor: "red", color: "white" }}
           onClick={() => setShowRejectModal(true)}
         >
           Отклонить
         </button>
-
         <button
           style={{ backgroundColor: "yellow", color: "black" }}
           onClick={() => setShowChangesModal(true)}
@@ -194,59 +203,12 @@ export default function ItemPage() {
         </button>
       </div>
 
-      {/* Модалка отклонения */}
-      {showRejectModal && (
-        <div
-          style={{
-            border: "1px solid black",
-            padding: 10,
-            marginTop: 10,
-          }}
-        >
-          <h4>Причина отклонения</h4>
-
-          <select
-            value={reason}
-            onChange={(e) => setReason(e.target.value as ReasonType)}
-          >
-            {reasons.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-
-          {reason === "Другое" && (
-            <input
-              type="text"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Введите причину"
-            />
-          )}
-
-          <div style={{ marginTop: 8 }}>
-            <button onClick={handleReject}>Подтвердить</button>
-            <button
-              onClick={() => setShowRejectModal(false)}
-              style={{ marginLeft: 8 }}
-            >
-              Отмена
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Модалка доработки */}
-      {showChangesModal && (
-        <div
-          style={{
-            border: "1px solid black",
-            padding: 10,
-            marginTop: 10,
-          }}
-        >
-          <h4>Причина доработки</h4>
+      {/* Модалки */}
+      {(showRejectModal || showChangesModal) && (
+        <div style={{ border: "1px solid black", padding: 10, marginTop: 10 }}>
+          <h4>
+            {showRejectModal ? "Причина отклонения" : "Причина доработки"}
+          </h4>
 
           <select
             value={reason}
@@ -269,9 +231,17 @@ export default function ItemPage() {
           )}
 
           <div style={{ marginTop: 8 }}>
-            <button onClick={handleRequestChanges}>Подтвердить</button>
             <button
-              onClick={() => setShowChangesModal(false)}
+              onClick={showRejectModal ? handleReject : handleRequestChanges}
+            >
+              Подтвердить
+            </button>
+            <button
+              onClick={() =>
+                showRejectModal
+                  ? setShowRejectModal(false)
+                  : setShowChangesModal(false)
+              }
               style={{ marginLeft: 8 }}
             >
               Отмена
