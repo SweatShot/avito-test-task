@@ -11,9 +11,10 @@ import { useItemNavigation } from "./hooks/useItemNavigation"
 
 import ModerationModal from "./components/ModerationModal"
 import ModerationButtons from "./components/ModerationButtons"
-import InfoTable from "../../components/InfoTable/InfoTable"
 import NavigationButtons from "../../components/NavigationButtons/NavigationButtons"
 import Gallery from "./components/Gallery"
+import InfoSection from "../../components/InfoSection/InfoSection"
+import { useAdTables } from "./hooks/useAdTables"
 
 export default function ItemPage() {
   const { id } = useParams<{ id: string }>()
@@ -49,22 +50,7 @@ export default function ItemPage() {
   if (isLoading) return <Loader />
   if (isError || !ad) return <p>Ошибка загрузки объявления</p>
 
-  // Формируем данные для таблиц
-  const characteristicsRows = Object.entries(ad.characteristics).map(
-    ([key, value]) => [key, value],
-  )
-  const sellerRows = [
-    ["Имя", ad.seller.name],
-    ["Рейтинг", ad.seller.rating],
-    ["Количество объявлений", ad.seller.totalAds],
-    ["Дата регистрации", new Date(ad.seller.registeredAt).toLocaleDateString()],
-  ]
-  const moderationRows = ad.moderationHistory.map(h => [
-    h.moderatorName,
-    new Date(h.timestamp).toLocaleString(),
-    h.action,
-    h.comment || "-",
-  ])
+  const { characteristicsRows, sellerRows, moderationRows } = useAdTables(ad)
 
   return (
     <div style={{ padding: 20 }}>
@@ -83,21 +69,19 @@ export default function ItemPage() {
       <Gallery images={ad.images} title={ad.title} />
 
       <p>{ad.description}</p>
-
-      {/* Характеристики */}
-      <h3>Характеристики</h3>
-      <InfoTable
+    
+      <InfoSection
+        title="Характеристики"
         headers={["Название", "Значение"]}
         rows={characteristicsRows}
       />
-
-      {/* Продавец */}
-      <h3>Информация о продавце</h3>
-      <InfoTable headers={["Поле", "Значение"]} rows={sellerRows} />
-
-      {/* История модерации */}
-      <h3>История модерации</h3>
-      <InfoTable
+      <InfoSection
+        title="Информация о продавце"
+        headers={["Поле", "Значение"]}
+        rows={sellerRows}
+      />
+      <InfoSection
+        title="История модерации"
         headers={["Модератор", "Дата и время", "Действие", "Комментарий"]}
         rows={moderationRows}
       />

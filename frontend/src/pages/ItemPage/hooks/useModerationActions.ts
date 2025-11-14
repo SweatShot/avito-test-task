@@ -20,7 +20,7 @@ export const useModerationActions = (
   adId: number,
   reason: ReasonType,
   comment: string,
-  onClose?: () => void // добавили аргумент
+  onClose?: () => void 
 ) => {
   const toast = useToast();
   const [approveAd] = useApproveAdMutation();
