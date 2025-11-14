@@ -1,98 +1,46 @@
 import { useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import {
-  useGetAdByIdQuery,
-  useApproveAdMutation,
-  useRejectAdMutation,
-  useRequestChangesMutation,
-  useGetAllIdsQuery,
-} from "../../app/shared/api/adsApi";
-import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
-import { useToast } from "../../context/ToastContext";
+import { useParams } from "react-router-dom";
+import { useGetAdByIdQuery, useGetAllIdsQuery } from "../../app/shared/api/adsApi";
 import Loader from "../../components/Loader/Loader";
-
-const reasons = [
-  "Запрещенный товар",
-  "Неверная категория",
-  "Некорректное описание",
-  "Проблемы с фото",
-  "Подозрение на мошенничество",
-  "Другое",
-] as const;
-
-type ReasonType = typeof reasons[number];
+import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
+import { reasons, ReasonType, useModerationActions } from "./hooks/useModerationActions";
+import { useItemNavigation } from "./hooks/useItemNavigation";
 
 export default function ItemPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const location = useLocation();
   const adId = Number(id);
 
-  const toast = useToast(); // хук тоста
-
-  const adsIdsFromList: number[] | undefined =
-    (location.state as { adsIds?: number[] } | undefined)?.adsIds;
-
-  const { data: allIds } = useGetAllIdsQuery(undefined, {
-    skip: Boolean(adsIdsFromList),
-  });
-
-  const adsIds: number[] | undefined = adsIdsFromList || allIds;
-  const { data: ad, isLoading, isError } = useGetAdByIdQuery(adId);
-
-  const [approveAd] = useApproveAdMutation();
-  const [rejectAd] = useRejectAdMutation();
-  const [requestChanges] = useRequestChangesMutation();
-
+  // Модалки и выбор причины
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showChangesModal, setShowChangesModal] = useState(false);
   const [reason, setReason] = useState<ReasonType>("Запрещенный товар");
   const [comment, setComment] = useState("");
 
-  const currentIndex = adsIds?.findIndex((i) => i === adId) ?? -1;
+  // Получаем все ID, чтобы передать хук навигации
+  const { data: allIds } = useGetAllIdsQuery();
+  const { data: ad, isLoading, isError } = useGetAdByIdQuery(adId);
 
-  const goPrev = () => {
-    if (!adsIds || currentIndex <= 0) return;
-    navigate(`/item/${adsIds[currentIndex - 1]}`, { state: { adsIds } });
-  };
+  // Хуки логики модерации
+  const { handleApprove, handleReject, handleRequestChanges } = useModerationActions(
+    adId,
+    reason,
+    comment,
+    () => {
+      setShowRejectModal(false);
+      setShowChangesModal(false);
+    }
+  );
 
-  const goNext = () => {
-    if (!adsIds || currentIndex === -1 || currentIndex >= adsIds.length - 1)
-      return;
-    navigate(`/item/${adsIds[currentIndex + 1]}`, { state: { adsIds } });
-  };
+  // Хук навигации
+  const { goPrev, goNext, goList, currentIndex } = useItemNavigation(adId, allIds);
 
-  const handleApprove = async () => {
-    await approveAd(adId);
-    toast.addToast("Объявление одобрено", "success");
-  };
-
-  const handleReject = async () => {
-    await rejectAd({ id: adId, reason, comment });
-    toast.addToast("Объявление отклонено", "error");
-    setShowRejectModal(false);
-  };
-
-  const handleRequestChanges = async () => {
-    await requestChanges({ id: adId, reason, comment });
-    toast.addToast("Запрос на доработку отправлен", "info");
-    setShowChangesModal(false);
-  };
-
+  // Горячие клавиши
   useKeyboardShortcuts({
     approve: handleApprove,
     reject: () => setShowRejectModal(true),
     next: goNext,
     prev: goPrev,
-    focusSearch: () => {
-      navigate("/list");
-      setTimeout(() => {
-        const searchInput = document.querySelector<HTMLInputElement>(
-          'input[placeholder*="Поиск"]'
-        );
-        searchInput?.focus();
-      }, 50);
-    },
+    focusSearch: goList,
   });
 
   if (isLoading) return <Loader />;
@@ -102,16 +50,9 @@ export default function ItemPage() {
     <div style={{ padding: 20 }}>
       {/* Навигация */}
       <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-        <button onClick={() => navigate("/list")}>Назад к списку</button>
-        <button onClick={goPrev} disabled={!adsIds || currentIndex <= 0}>
-          ← Предыдущее
-        </button>
-        <button
-          onClick={goNext}
-          disabled={!adsIds || currentIndex >= adsIds.length - 1}
-        >
-          Следующее →
-        </button>
+        <button onClick={goList}>Назад к списку</button>
+        <button onClick={goPrev} disabled={currentIndex <= 0}>← Предыдущее</button>
+        <button onClick={goNext} disabled={currentIndex >= (allIds?.length ?? 0) - 1}>Следующее →</button>
       </div>
 
       <h1>{ad.title}</h1>
@@ -136,9 +77,7 @@ export default function ItemPage() {
         <tbody>
           {Object.entries(ad.characteristics).map(([key, value]) => (
             <tr key={key}>
-              <td>
-                <strong>{key}</strong>
-              </td>
+              <td><strong>{key}</strong></td>
               <td>{value}</td>
             </tr>
           ))}
@@ -150,10 +89,7 @@ export default function ItemPage() {
       <p>Имя: {ad.seller.name}</p>
       <p>Рейтинг: {ad.seller.rating}</p>
       <p>Количество объявлений: {ad.seller.totalAds}</p>
-      <p>
-        Дата регистрации:{" "}
-        {new Date(ad.seller.registeredAt).toLocaleDateString()}
-      </p>
+      <p>Дата регистрации: {new Date(ad.seller.registeredAt).toLocaleDateString()}</p>
 
       {/* История модерации */}
       <h3>История модерации</h3>
@@ -180,42 +116,18 @@ export default function ItemPage() {
 
       {/* Панель действий */}
       <div style={{ marginTop: 20, display: "flex", gap: 10 }}>
-        <button
-          style={{ backgroundColor: "green", color: "white" }}
-          onClick={handleApprove}
-        >
-          Одобрить
-        </button>
-        <button
-          style={{ backgroundColor: "red", color: "white" }}
-          onClick={() => setShowRejectModal(true)}
-        >
-          Отклонить
-        </button>
-        <button
-          style={{ backgroundColor: "yellow", color: "black" }}
-          onClick={() => setShowChangesModal(true)}
-        >
-          Вернуть на доработку
-        </button>
+        <button style={{ backgroundColor: "green", color: "white" }} onClick={handleApprove}>Одобрить</button>
+        <button style={{ backgroundColor: "red", color: "white" }} onClick={() => setShowRejectModal(true)}>Отклонить</button>
+        <button style={{ backgroundColor: "yellow", color: "black" }} onClick={() => setShowChangesModal(true)}>Вернуть на доработку</button>
       </div>
 
       {/* Модалки */}
       {(showRejectModal || showChangesModal) && (
         <div style={{ border: "1px solid black", padding: 10, marginTop: 10 }}>
-          <h4>
-            {showRejectModal ? "Причина отклонения" : "Причина доработки"}
-          </h4>
+          <h4>{showRejectModal ? "Причина отклонения" : "Причина доработки"}</h4>
 
-          <select
-            value={reason}
-            onChange={(e) => setReason(e.target.value as ReasonType)}
-          >
-            {reasons.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
+          <select value={reason} onChange={(e) => setReason(e.target.value as ReasonType)}>
+            {reasons.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
 
           {reason === "Другое" && (
@@ -228,17 +140,11 @@ export default function ItemPage() {
           )}
 
           <div style={{ marginTop: 8 }}>
+            <button onClick={showRejectModal ? handleReject : handleRequestChanges}>Подтвердить</button>
             <button
-              onClick={showRejectModal ? handleReject : handleRequestChanges}
-            >
-              Подтвердить
-            </button>
-            <button
-              onClick={() =>
-                showRejectModal
-                  ? setShowRejectModal(false)
-                  : setShowChangesModal(false)
-              }
+              onClick={() => {
+                showRejectModal ? setShowRejectModal(false) : setShowChangesModal(false);
+              }}
               style={{ marginLeft: 8 }}
             >
               Отмена
