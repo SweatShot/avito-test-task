@@ -1,50 +1,78 @@
-import { FC } from "react";
+import React from "react";
+import { reasons, ReasonType } from "../hooks/useModerationActions";
 
-interface Props {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  reason: string;
-  setReason: (r: string) => void;
+interface ModerationModalProps {
+  show: boolean;
+  type: "reject" | "changes";
+  reason: ReasonType;
   comment: string;
-  setComment: (c: string) => void;
-  reasons: readonly string[];
-  title: string;
+  onReasonChange: (reason: ReasonType) => void;
+  onCommentChange: (comment: string) => void;
+  onConfirm: () => void;
+  onCancel: () => void;
 }
 
-export const ModerationModal: FC<Props> = ({
-  isOpen,
-  onClose,
-  onConfirm,
+const ModerationModal: React.FC<ModerationModalProps> = ({
+  show,
+  type,
   reason,
-  setReason,
   comment,
-  setComment,
-  reasons,
-  title,
+  onReasonChange,
+  onCommentChange,
+  onConfirm,
+  onCancel,
 }) => {
-  if (!isOpen) return null;
+  if (!show) return null;
 
   return (
-    <div style={{ border: "1px solid black", padding: 10, marginTop: 10 }}>
-      <h4>{title}</h4>
-      <select value={reason} onChange={(e) => setReason(e.target.value)}>
-        {reasons.map((r) => (
-          <option key={r} value={r}>{r}</option>
-        ))}
-      </select>
-      {reason === "Другое" && (
-        <input
-          type="text"
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="Введите комментарий"
-        />
-      )}
-      <div style={{ marginTop: 8 }}>
-        <button onClick={onConfirm}>Подтвердить</button>
-        <button onClick={onClose} style={{ marginLeft: 8 }}>Отмена</button>
+    <div style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100vw",
+      height: "100vh",
+      backgroundColor: "rgba(0,0,0,0.5)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 1000,
+    }}>
+      <div style={{
+        backgroundColor: "white",
+        padding: 20,
+        borderRadius: 8,
+        minWidth: 320,
+        boxShadow: "0 4px 10px rgba(0,0,0,0.25)",
+      }}>
+        <h4>{type === "reject" ? "Причина отклонения" : "Причина доработки"}</h4>
+
+        <select
+          value={reason}
+          onChange={(e) => onReasonChange(e.target.value as ReasonType)}
+          style={{ width: "100%", marginTop: 8, padding: 6 }}
+        >
+          {reasons.map((r) => <option key={r} value={r}>{r}</option>)}
+        </select>
+
+        {reason === "Другое" && (
+          <input
+            type="text"
+            value={comment}
+            onChange={(e) => onCommentChange(e.target.value)}
+            placeholder="Введите комментарий"
+            style={{ width: "100%", marginTop: 8, padding: 6 }}
+          />
+        )}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12, gap: 8 }}>
+          <button onClick={onConfirm} style={{ backgroundColor: "blue", color: "white", padding: "6px 12px" }}>
+            Подтвердить
+          </button>
+          <button onClick={onCancel} style={{ padding: "6px 12px" }}>Отмена</button>
+        </div>
       </div>
     </div>
   );
 };
+
+export default ModerationModal;

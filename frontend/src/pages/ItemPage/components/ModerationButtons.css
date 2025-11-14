@@ -1,0 +1,40 @@
+.moderation-buttons {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.moderation-buttons button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Цвета кнопок */
+.moderation-buttons .approve {
+  background-color: #28a745;
+  color: white;
+  border-color: #28a745;
+}
+
+.moderation-buttons .reject {
+  background-color: #dc3545;
+  color: white;
+  border-color: #dc3545;
+}
+
+.moderation-buttons .changes {
+  background-color: #ffc107;
+  color: black;
+  border-color: #ffc107;
+}
+
+.moderation-buttons button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  opacity: 0.9;
+}
