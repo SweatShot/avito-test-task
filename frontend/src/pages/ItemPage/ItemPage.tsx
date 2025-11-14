@@ -8,6 +8,8 @@ import {
   useGetAllIdsQuery,
 } from "../../app/shared/api/adsApi";
 import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
+import { useToast } from "../../context/ToastContext";
+import Loader from "../../components/Loader/Loader";
 
 const reasons = [
   "Запрещенный товар",
@@ -25,6 +27,8 @@ export default function ItemPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const adId = Number(id);
+
+  const toast = useToast(); // хук тоста
 
   const adsIdsFromList: number[] | undefined =
     (location.state as { adsIds?: number[] } | undefined)?.adsIds;
@@ -60,22 +64,21 @@ export default function ItemPage() {
 
   const handleApprove = async () => {
     await approveAd(adId);
-    alert("Объявление одобрено");
+    toast.addToast("Объявление одобрено", "success");
   };
 
   const handleReject = async () => {
     await rejectAd({ id: adId, reason, comment });
-    alert("Объявление отклонено");
+    toast.addToast("Объявление отклонено", "error");
     setShowRejectModal(false);
   };
 
   const handleRequestChanges = async () => {
     await requestChanges({ id: adId, reason, comment });
-    alert("Запрос на доработку отправлен");
+    toast.addToast("Запрос на доработку отправлен", "info");
     setShowChangesModal(false);
   };
 
-  // Хук горячих клавиш
   useKeyboardShortcuts({
     approve: handleApprove,
     reject: () => setShowRejectModal(true),
@@ -92,20 +95,14 @@ export default function ItemPage() {
     },
   });
 
-  if (isLoading) return <p>Загрузка...</p>;
+  if (isLoading) return <Loader />;
   if (isError || !ad) return <p>Ошибка загрузки объявления</p>;
 
   return (
     <div style={{ padding: 20 }}>
       {/* Навигация */}
       <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-        <button
-          onClick={() => {
-            navigate("/list");
-          }}
-        >
-          Назад к списку
-        </button>
+        <button onClick={() => navigate("/list")}>Назад к списку</button>
         <button onClick={goPrev} disabled={!adsIds || currentIndex <= 0}>
           ← Предыдущее
         </button>
