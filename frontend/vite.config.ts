@@ -7,16 +7,16 @@ import packageJson from "./package.json" with { type: "json" }
 export default defineConfig({
   plugins: [react()],
 
-  server: {
-    open: true,
-    proxy: {
-      "/api": {
-        target: "http://localhost:3001", 
-        changeOrigin: true,
-        secure: false,
-      },
-    },
-  },
+  // server: {
+  //   open: true,
+  //   proxy: {
+  //     "/api": {
+  //       target: "http://localhost:3001", 
+  //       changeOrigin: true,
+  //       secure: false,
+  //     },
+  //   },
+  // },
 
   test: {
     root: import.meta.dirname,

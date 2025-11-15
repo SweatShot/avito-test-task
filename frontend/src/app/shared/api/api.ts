@@ -1,8 +1,8 @@
 import { createApi, fetchBaseQuery, retry } from "@reduxjs/toolkit/query/react"
-import { BASE_URL } from "../../../constants"
+// import { BASE_URL } from "../../../constants"
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: `${BASE_URL}/api/v1`,
+  baseUrl: `/api/v1`, // если с прокси то `${BASE_URL}/api/v1`
 })
 
 const baseQueryWithRetry = retry(baseQuery, { maxRetries: 1 })
