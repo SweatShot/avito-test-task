@@ -28,8 +28,7 @@ export const adsApi = api.injectEndpoints({
         url: "/ads",
         params: { limit: 10000, fields: "id" },
       }),
-      transformResponse: (response: any) =>
-        response.ads.map((ad: any) => ad.id),
+      transformResponse: (response: any) => response.ads.map((ad: any) => ad.id),
       providesTags: [{ type: "Ads" }],
     }),
 
@@ -48,33 +47,27 @@ export const adsApi = api.injectEndpoints({
         url: `/ads/${id}/approve`,
         method: "POST",
       }),
-      invalidatesTags: [{ type: "Ads" }],
+      invalidatesTags: (_result, _error, id) => [{ type: "Ads", id }],
     }),
 
     // Отклонить объявление
-    rejectAd: builder.mutation<
-      RejectAdResponse,
-      { id: number } & RejectAdRequest
-    >({
+    rejectAd: builder.mutation<RejectAdResponse, { id: number } & RejectAdRequest>({
       query: ({ id, ...body }) => ({
         url: `/ads/${id}/reject`,
         method: "POST",
         body,
       }),
-      invalidatesTags: [{ type: "Ads" }],
+      invalidatesTags: (_result, _error, { id }) => [{ type: "Ads", id }],
     }),
 
     // Запросить доработки
-    requestChanges: builder.mutation<
-      RequestChangesResponse,
-      { id: number } & RequestChangesRequest
-    >({
+    requestChanges: builder.mutation<RequestChangesResponse, { id: number } & RequestChangesRequest>({
       query: ({ id, ...body }) => ({
         url: `/ads/${id}/request-changes`,
         method: "POST",
         body,
       }),
-      invalidatesTags: [{ type: "Ads" }],
+      invalidatesTags: (_result, _error, { id }) => [{ type: "Ads", id }],
     }),
   }),
   overrideExisting: false,

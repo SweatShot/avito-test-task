@@ -1,69 +1,100 @@
-import { useParams } from "react-router-dom";
-import { useGetAdByIdQuery, useGetAllIdsQuery } from "../../app/shared/api/adsApi";
+import { useParams } from "react-router-dom"
+import {
+  useGetAdByIdQuery,
+  useGetAllIdsQuery,
+} from "../../app/shared/api/adsApi"
 
-import Loader from "../../components/Loader/Loader";
-import InfoSection from "../../components/InfoSection/InfoSection";
-import ModerationModal from "./components/ModerationModal";
-import ModerationButtons from "./components/ModerationButtons";
-import { BulkModerationControls } from "./components/BulkModerationControls";
-import { useModerationActions } from "./hooks/useModerationActions";
-import { useModerationDialogs } from "./hooks/useModerationDialogs";
-import { useModerationHotkeys } from "./hooks/useModerationHotkeys";
-import { useItemNavigation } from "./hooks/useItemNavigation";
-import AdHeader from "./components/AdHeader";
+import Loader from "../../components/Loader/Loader"
+import InfoSection from "../../components/InfoSection/InfoSection"
+import ModerationModal from "./components/ModerationModal"
+import ModerationButtons from "./components/ModerationButtons"
+import { BulkModerationControls } from "./components/BulkModerationControls"
+import { useModerationActions } from "./hooks/useModerationActions"
+import { useModerationDialogs } from "./hooks/useModerationDialogs"
+import { useModerationHotkeys } from "./hooks/useModerationHotkeys"
+import { useItemNavigation } from "./hooks/useItemNavigation"
+import AdHeader from "./components/AdHeader"
 
-import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "../../app/store/store";
-import { toggle } from "../../app/store/bulkSelectionSlice";
+import { useSelector, useDispatch } from "react-redux"
+import { RootState } from "../../app/store/store"
+import { toggle } from "../../app/store/bulkSelectionSlice"
 
 export default function ItemPage() {
-  const { id } = useParams<{ id: string }>();
-  const adId = Number(id);
+  const { id } = useParams<{ id: string }>()
+  const adId = Number(id)
 
-  const { data: allIds } = useGetAllIdsQuery();
-  const { data: ad, isLoading, isError } = useGetAdByIdQuery(adId);
+  const { data: allIds } = useGetAllIdsQuery()
+  const { data: ad, isLoading, isError } = useGetAdByIdQuery(adId)
 
-  const { showRejectModal, showChangesModal, openReject, openChanges, closeAll, reason, comment, setReason, setComment } =
-    useModerationDialogs();
+  const {
+    showRejectModal,
+    showChangesModal,
+    openReject,
+    openChanges,
+    closeAll,
+    reason,
+    comment,
+    setReason,
+    setComment,
+  } = useModerationDialogs()
 
-  const { goPrev, goNext, goList, currentIndex } = useItemNavigation(adId, allIds);
+  const { goPrev, goNext, goList, currentIndex } = useItemNavigation(
+    adId,
+    allIds,
+  )
 
-  const { handleApprove, handleReject, handleRequestChanges, handleBulkApprove, handleBulkReject } =
-    useModerationActions(adId, reason, comment, closeAll);
+  const {
+    handleApprove,
+    handleReject,
+    handleRequestChanges,
+    handleBulkApprove,
+    handleBulkReject,
+    handleBulkRequestChanges,
+  } = useModerationActions(adId, reason, comment, closeAll)
 
   useModerationHotkeys({
-    onApprove: handleApprove,
-    onReject: openReject,
+    onApprove: () => handleApprove(ad?.id),
+    onReject: () => openReject(),
     onNext: goNext,
     onPrev: goPrev,
     onList: goList,
-  });
+  })
 
-  const dispatch = useDispatch();
-  const selectedIds = useSelector((state: RootState) => state.bulkSelection.selectedIds);
+  const dispatch = useDispatch()
+  const selectedIds = useSelector(
+    (state: RootState) => state.bulkSelection.selectedIds,
+  )
 
-  if (isLoading) return <Loader />;
-  if (isError || !ad) return <p>Ошибка загрузки</p>;
+  if (isLoading) return <Loader />
+  if (isError || !ad) return <p>Ошибка загрузки</p>
 
-  const characteristicsRows = Object.entries(ad.characteristics).map(([k, v]) => [k, v]);
+  const characteristicsRows = Object.entries(ad.characteristics).map(
+    ([k, v]) => [k, v],
+  )
   const sellerRows = [
     ["Имя", ad.seller.name],
     ["Рейтинг", ad.seller.rating],
     ["Количество объявлений", ad.seller.totalAds],
     ["Дата регистрации", new Date(ad.seller.registeredAt).toLocaleDateString()],
-  ];
+  ]
   const moderationRows = ad.moderationHistory.map(h => [
     h.moderatorName,
     new Date(h.timestamp).toLocaleString(),
     h.action,
     h.comment || "-",
-  ]);
+  ])
 
   return (
     <div style={{ padding: 20 }}>
       <AdHeader
         ad={ad}
-        navigation={{ goPrev, goNext, goList, currentIndex, total: allIds?.length ?? 0 }}
+        navigation={{
+          goPrev,
+          goNext,
+          goList,
+          currentIndex,
+          total: allIds?.length ?? 0,
+        }}
       />
 
       {/* Bulk controls */}
@@ -71,6 +102,7 @@ export default function ItemPage() {
         allIds={allIds ?? []}
         onApprove={handleBulkApprove}
         onReject={handleBulkReject}
+        onRequestChanges={handleBulkRequestChanges}
       />
 
       {/* Чекбокс для текущего объявления */}
@@ -79,17 +111,31 @@ export default function ItemPage() {
           type="checkbox"
           checked={selectedIds.includes(ad.id)}
           onChange={() => dispatch(toggle(ad.id))}
-        /> Выбрать это объявление
+        />{" "}
+        Выбрать это объявление
       </div>
 
-      <InfoSection title="Характеристики" headers={["Название", "Значение"]} rows={characteristicsRows} />
-      <InfoSection title="Продавец" headers={["Поле", "Значение"]} rows={sellerRows} />
-      <InfoSection title="История модерации" headers={["Модератор", "Дата", "Действие", "Комментарий"]} rows={moderationRows} />
+      <InfoSection
+        title="Характеристики"
+        headers={["Название", "Значение"]}
+        rows={characteristicsRows}
+      />
+      <InfoSection
+        title="Продавец"
+        headers={["Поле", "Значение"]}
+        rows={sellerRows}
+      />
+      <InfoSection
+        title="История модерации"
+        headers={["Модератор", "Дата", "Действие", "Комментарий"]}
+        rows={moderationRows}
+      />
 
       <ModerationButtons
+        adId={ad.id}
         onApprove={handleApprove}
-        onReject={openReject}
-        onRequestChanges={openChanges}
+        onReject={handleReject}
+        onRequestChanges={handleRequestChanges}
       />
 
       <ModerationModal
@@ -99,7 +145,7 @@ export default function ItemPage() {
         comment={comment}
         onReasonChange={setReason}
         onCommentChange={setComment}
-        onConfirm={handleReject}
+        onConfirm={() => handleReject(ad?.id)}
         onCancel={closeAll}
       />
 
@@ -114,5 +160,5 @@ export default function ItemPage() {
         onCancel={closeAll}
       />
     </div>
-  );
+  )
 }
