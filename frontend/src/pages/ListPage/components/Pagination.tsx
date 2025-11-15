@@ -7,6 +7,7 @@ interface PaginationProps {
   totalItems: number
   onPrev: () => void
   onNext: () => void
+  setPage: (page: number) => void 
 }
 
 export default function Pagination({
@@ -15,6 +16,7 @@ export default function Pagination({
   totalItems,
   onPrev,
   onNext,
+  setPage,
 }: PaginationProps) {
   useKeyboardShortcuts({
     approve: () => {},
@@ -29,7 +31,10 @@ export default function Pagination({
       const input = document.querySelector<HTMLInputElement>(
         'input[placeholder*="Поиск"]',
       )
-      input?.focus()
+      if (input) {
+        input.focus()
+        setPage(1) 
+      }
     },
   })
 
