@@ -84,8 +84,6 @@ export interface Moderator {
   permissions: string[];
 }
 
-// ========== Common API Response Types ==========
-
 export interface BadRequestResponse {
   error: string;
   message: string;
@@ -100,8 +98,6 @@ export interface InternalServerErrorResponse {
   error: string;
   message: string;
 }
-
-// ========== API Endpoint Response Models ==========
 
 export interface GetAdsResponse {
   ads: Advertisement[];
@@ -137,8 +133,6 @@ export interface CategoriesChartResponse {
 
 export interface ModeratorMeResponse extends Moderator {}
 
-// ========== Request Body Types ==========
-
 export interface RejectAdRequest {
   reason:
     | "Запрещенный товар"
@@ -160,8 +154,6 @@ export interface RequestChangesRequest {
     | "Другое";
   comment?: string;
 }
-
-// ========== Query Parameter Types ==========
 
 export interface GetAdsQuery {
   page?: number;
