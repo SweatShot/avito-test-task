@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom"
-import { useMemo } from "react"
-import { Button, Row, Col } from "antd"
+import { useMemo, useState } from "react"
+import { Button, Row, Col, Radio } from "antd"
 import { useStats } from "../../hooks/useStats"
 import { StatsCards } from "./components/StatsCards"
 import { ActivityChart } from "./components/ActivityChart"
@@ -11,6 +11,8 @@ import { ActivityItem } from "./types/stats"
 export default function StatsPage() {
   const navigate = useNavigate()
   const { summary, activityData, decisionsData, categoriesData, formattedAverageTime } = useStats()
+
+  const [period, setPeriod] = useState<"today" | "week" | "month">("today")
 
   // Преобразуем activityData в формат для ExportButtons
   const activityDataForExport: ActivityItem[] = useMemo(() => {
@@ -28,10 +30,24 @@ export default function StatsPage() {
     return Object.values(map)
   }, [activityData])
 
-  // Формат для стобчатой диаграммы
-  const activityDataFormatted = useMemo(() => {
-    return activityDataForExport
-  }, [activityDataForExport])
+  // Фильтруем данные по выбранному периоду
+  const activityDataFiltered = useMemo(() => {
+    const now = new Date()
+    let startDate: Date
+
+    if (period === "today") {
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()) // начало сегодняшнего дня
+    } else if (period === "week") {
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6)
+    } else {
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29)
+    }
+
+    return activityDataForExport.filter(item => {
+      const itemDate = new Date(item.date)
+      return itemDate >= startDate
+    })
+  }, [activityDataForExport, period])
 
   return (
     <div style={{ padding: 20 }}>
@@ -41,6 +57,15 @@ export default function StatsPage() {
 
       <h1 style={{ marginTop: 20, textAlign: "center" }}>Статистика модератора</h1>
 
+      {/* Переключатель периода */}
+      <div style={{ textAlign: "center", margin: "20px 0" }}>
+        <Radio.Group value={period} onChange={e => setPeriod(e.target.value)}>
+          <Radio.Button value="today">Сегодня</Radio.Button>
+          <Radio.Button value="week">Последние 7 дней</Radio.Button>
+          <Radio.Button value="month">Последние 30 дней</Radio.Button>
+        </Radio.Group>
+      </div>
+
       {/* Кнопки экспорта */}
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
         <ExportButtons
@@ -49,7 +74,7 @@ export default function StatsPage() {
             week: { totalReviewed: summary.week?.totalReviewed ?? 0 },
             month: { totalReviewed: summary.month?.totalReviewed ?? 0 },
           }}
-          activityData={activityDataForExport}
+          activityData={activityDataFiltered}
           decisionsData={decisionsData}
           categoriesData={categoriesData}
         />
@@ -67,7 +92,7 @@ export default function StatsPage() {
 
       <Row gutter={[20, 20]} style={{ marginTop: 40 }}>
         <Col span={24}>
-          <ActivityChart data={activityDataFormatted} />
+          <ActivityChart data={activityDataFiltered} />
         </Col>
       </Row>
 
@@ -76,7 +101,7 @@ export default function StatsPage() {
           <PieChartComponent title="Распределение решений, %" data={decisionsData} />
         </Col>
         <Col xs={24} md={12}>
-          <PieChartComponent title="Распределение по категориям" data={categoriesData} />
+          <PieChartComponent title="Распределение по категориям" data={categoriesData} showPercentage={false} />
         </Col>
       </Row>
     </div>
