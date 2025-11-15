@@ -1,9 +1,11 @@
 import { JSX, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { useGetAdsQuery, useGetAllIdsQuery } from "../../app/shared/api/adsApi";
 import { GetAdsQuery, Advertisement } from "../../types/apiTypes";
 import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
-import AdCard from "./components/AdsCard"
+import AdCard from "./components/AdsCard";
+import Loader from "../../components/Loader/Loader";
+import FilterPanel from "./components/FilterPanel";
+import Pagination from "./components/Pagination";
 
 export default function ListPage(): JSX.Element {
   const [search, setSearch] = useState("");
@@ -74,81 +76,32 @@ export default function ListPage(): JSX.Element {
   });
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ padding: 20 }}>
       <h1>Список объявлений</h1>
 
-      {/* Фильтры */}
-      <div style={{ margin: "15px 0" }}>
-        <input
-          type="text"
-          placeholder="Поиск по названию..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ marginRight: "10px", padding: "5px" }}
-        />
+      <FilterPanel
+        search={search}
+        setSearch={setSearch}
+        statusFilter={statusFilter}
+        toggleStatus={toggleStatus}
+        categoryFilter={categoryFilter}
+        setCategoryFilter={setCategoryFilter}
+        categories={categories}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        sortOrder={sortOrder}
+        setSortOrder={setSortOrder}
+        resetFilters={resetFilters}
+      />
 
-        <span style={{ marginRight: "10px" }}>Статус:</span>
-        {["pending", "approved", "rejected", "draft"].map((s) => (
-          <label key={s} style={{ marginRight: "10px" }}>
-            <input
-              type="checkbox"
-              checked={statusFilter.includes(s)}
-              onChange={() => toggleStatus(s)}
-            />{" "}
-            {s}
-          </label>
-        ))}
-
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          style={{ marginRight: "10px", padding: "5px" }}
-        >
-          <option value="">Все категории</option>
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as any)}
-          style={{ marginRight: "10px", padding: "5px" }}
-        >
-          <option value="createdAt">Дата создания</option>
-          <option value="price">Цена</option>
-          <option value="priority">Приоритет</option>
-        </select>
-
-        <select
-          value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value as any)}
-          style={{ marginRight: "10px", padding: "5px" }}
-        >
-          <option value="desc">По убыванию</option>
-          <option value="asc">По возрастанию</option>
-        </select>
-
-        <button onClick={resetFilters} style={{ padding: "5px 10px" }}>
-          Сбросить
-        </button>
-
-        <Link to="/stats" style={{ marginLeft: 12 }}>
-          <button>Статистика модератора</button>
-        </Link>
-      </div>
-
-      {isLoading && <p style={{ textAlign: "center" }}>Загрузка...</p>}
+      {isLoading && <Loader />}
       {isError && <p style={{ textAlign: "center" }}>Ошибка при загрузке объявлений.</p>}
 
-      {/* Список карточек */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-          gap: "15px",
+          gap: 15,
         }}
       >
         {filteredAds.map((ad) => (
@@ -156,33 +109,14 @@ export default function ListPage(): JSX.Element {
         ))}
       </div>
 
-      {/* Серверная пагинация */}
       {data?.pagination && (
-        <div
-          style={{
-            marginTop: 20,
-            display: "flex",
-            gap: 10,
-            alignItems: "center",
-          }}
-        >
-          <button
-            disabled={page === 1}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            Назад
-          </button>
-          <span>
-            Страница {data.pagination.currentPage} из {data.pagination.totalPages} (Всего:{" "}
-            {data.pagination.totalItems})
-          </span>
-          <button
-            disabled={page === data.pagination.totalPages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Вперед
-          </button>
-        </div>
+        <Pagination
+          page={data.pagination.currentPage}
+          totalPages={data.pagination.totalPages}
+          totalItems={data.pagination.totalItems}
+          onPrev={() => setPage((p) => p - 1)}
+          onNext={() => setPage((p) => p + 1)}
+        />
       )}
     </div>
   );
