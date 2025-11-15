@@ -30,7 +30,6 @@ export default function ItemPage() {
     showRejectModal,
     showChangesModal,
     openReject,
-    openChanges,
     closeAll,
     reason,
     comment,
