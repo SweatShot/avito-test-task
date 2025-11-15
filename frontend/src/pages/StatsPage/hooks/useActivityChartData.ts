@@ -20,7 +20,6 @@ export function useActivityChartData(activityData: ActivityItem[]): ActivityChar
     activityData.forEach(item => {
       if (!map[item.date]) map[item.date] = { date: item.date, Одобрено: 0, Отклонено: 0, "На доработку": 0 }
 
-      // Корректируем типы для BarChart
       if (item.type === "Одобрено" || item.type === "Отклонено" || item.type === "На доработку") {
         map[item.date][item.type] = item.value
       }

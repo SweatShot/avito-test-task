@@ -5,7 +5,7 @@ export interface PieChartComponentProps {
   data: { type: string; value: number }[]
   colors?: string[]
   isDark?: boolean
-  showPercentage?: boolean // новый флаг
+  showPercentage?: boolean 
 }
 
 export function PieChartComponent({

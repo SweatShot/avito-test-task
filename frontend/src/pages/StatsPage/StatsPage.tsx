@@ -10,10 +10,8 @@ export default function StatsPage() {
   const navigate = useNavigate()
   const { summary, activityData, decisionsData, categoriesData, formattedAverageTime } = useStats()
 
-  // Проверка активной темы
   const isDark = document.documentElement.getAttribute("data-theme") === "dark"
 
-  // Форматирование данных для BarChart
   const activityDataFormatted = useMemo(() => {
     const map: Record<string, { date: string; Одобрено: number; Отклонено: number; "На доработку": number }> = {}
     activityData.forEach(item => {
