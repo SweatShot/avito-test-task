@@ -7,17 +7,17 @@ import { ActivityChart } from "./components/ActivityChart"
 import { PieChartComponent } from "./components/PieChartComponent"
 import { ExportButtons } from "./components/ExportButtons"
 import { ActivityItem } from "./types/stats"
+import { useFilteredActivity, Period } from "./hooks/useFilteredActivity"
 
 export default function StatsPage() {
   const navigate = useNavigate()
   const { summary, activityData, decisionsData, categoriesData, formattedAverageTime } = useStats()
 
-  const [period, setPeriod] = useState<"today" | "week" | "month">("today")
+  const [period, setPeriod] = useState<Period>("today")
 
-  // Преобразуем activityData в формат для ExportButtons
+  // Преобразуем activityData в формат с суммами по дням
   const activityDataForExport: ActivityItem[] = useMemo(() => {
     const map: Record<string, ActivityItem> = {}
-
     activityData.forEach(item => {
       if (!map[item.date]) {
         map[item.date] = { date: item.date, Одобрено: 0, Отклонено: 0, "На доработку": 0 }
@@ -26,28 +26,10 @@ export default function StatsPage() {
       if (item.type === "Отклонено") map[item.date].Отклонено += item.value
       if (item.type === "На доработку") map[item.date]["На доработку"] += item.value
     })
-
     return Object.values(map)
   }, [activityData])
 
-  // Фильтруем данные по выбранному периоду
-  const activityDataFiltered = useMemo(() => {
-    const now = new Date()
-    let startDate: Date
-
-    if (period === "today") {
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()) // начало сегодняшнего дня
-    } else if (period === "week") {
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6)
-    } else {
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29)
-    }
-
-    return activityDataForExport.filter(item => {
-      const itemDate = new Date(item.date)
-      return itemDate >= startDate
-    })
-  }, [activityDataForExport, period])
+  const activityDataFiltered = useFilteredActivity(activityDataForExport, period)
 
   return (
     <div style={{ padding: 20 }}>
@@ -57,7 +39,6 @@ export default function StatsPage() {
 
       <h1 style={{ marginTop: 20, textAlign: "center" }}>Статистика модератора</h1>
 
-      {/* Переключатель периода */}
       <div style={{ textAlign: "center", margin: "20px 0" }}>
         <Radio.Group value={period} onChange={e => setPeriod(e.target.value)}>
           <Radio.Button value="today">Сегодня</Radio.Button>
@@ -66,7 +47,6 @@ export default function StatsPage() {
         </Radio.Group>
       </div>
 
-      {/* Кнопки экспорта */}
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
         <ExportButtons
           summary={{
