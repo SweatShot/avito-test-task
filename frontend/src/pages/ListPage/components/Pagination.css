@@ -1,12 +1,14 @@
 .pagination-panel {
-  margin-top: 3%;
+  position: fixed;        
+  bottom: 0;               
+  left: 0;
+  width: 100%;
   display: flex;
   gap: 10px;
   align-items: center;
   justify-content: center;
-}
-
-.pagination-info {
-  color: var(--text);
-  font-size: 14px;
+  padding: 10px 0;
+  background-color: var(--card-bg, #fff); 
+  border-top: 1px solid var(--border-color, #ccc);
+  z-index: 10;             
 }
