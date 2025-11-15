@@ -44,7 +44,7 @@ export default function FilterPanel({
 
       {/* Статус */}
       <span>Статус:</span>
-      {["pending", "approved", "rejected", "draft"].map(s => (
+      {["pending", "approved", "rejected"].map(s => (
         <label key={s} className="checkbox-label">
           <input
             type="checkbox"
