@@ -10,6 +10,7 @@ import FilterPanel from "./components/FilterPanel"
 import AdsGrid from "./components/AdsGrid"
 import Pagination from "./components/Pagination"
 import Loader from "../../components/Loader/Loader"
+import AdvancedFiltersPanel from "./components/AdvancedFiltersPanel"
 
 export default function ListPage() {
   const [page, setPage] = useState(1)
@@ -34,6 +35,8 @@ export default function ListPage() {
     <div style={{ padding: 20 }}>
       <h1>Список объявлений</h1>
 
+      <AdvancedFiltersPanel filters={filters} />
+
       <FilterPanel {...filters} categories={categories} />
 
       {isLoading && <Loader />}
@@ -52,7 +55,7 @@ export default function ListPage() {
           onNext={() =>
             setPage(p => Math.min(p + 1, data.pagination.totalPages))
           }
-          setPage={setPage} 
+          setPage={setPage}
         />
       )}
     </div>
