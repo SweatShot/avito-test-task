@@ -9,7 +9,6 @@ import {
 export function useStats() {
   const periods = ["today", "week", "month"] as const
 
-  // Запросы по периодам
   const summaryQueries = periods.map(period =>
     useGetSummaryStatsQuery({ period })
   )
@@ -24,17 +23,18 @@ export function useStats() {
   const loadingSummary = summaryQueries.some(q => q.isLoading)
 
   // Графики
-  const { data: activity, isLoading: loadingActivity } =
-    useGetActivityChartQuery({ period: "week" })
-  const { data: decisions, isLoading: loadingDecisions } =
-    useGetDecisionsChartQuery({ period: "week" })
-  const { data: categories, isLoading: loadingCategories } =
-    useGetCategoriesChartQuery({ period: "week" })
+  const { data: activity } = useGetActivityChartQuery({ period: "week" })
+  const { data: decisions } = useGetDecisionsChartQuery({ period: "week" })
+  const { data: categories } = useGetCategoriesChartQuery({ period: "week" })
 
-  const loading = loadingSummary || loadingActivity || loadingDecisions || loadingCategories
+  const loading = loadingSummary || !activity || !decisions || !categories
 
-  // Подготовка данных графиков с useMemo
-  const activityData = useMemo(() => {
+  // Типы графиков
+  type ActivityItem = { date: string; type: string; value: number }
+  type PieItem = { type: string; value: number }
+
+  // Данные для BarChart
+  const activityData: ActivityItem[] = useMemo(() => {
     if (!activity) return []
     return activity.flatMap(day => [
       { date: day.date, type: "Одобрено", value: day.approved },
@@ -43,38 +43,51 @@ export function useStats() {
     ])
   }, [activity])
 
-  const decisionsData = useMemo(() => {
+  // Проценты для карточек и PieChart
+  const decisionsPercentages: PieItem[] = useMemo(() => {
     if (!decisions) return []
+
+    const total =
+      (decisions.approved ?? 0) +
+      (decisions.rejected ?? 0) +
+      (decisions.requestChanges ?? 0)
+    if (total === 0) return []
+
+    const approved = ((decisions.approved / total) * 100)
+    const rejected = ((decisions.rejected / total) * 100)
+    const requestChanges = ((decisions.requestChanges / total) * 100)
+
     return [
-      { type: "Одобрено", value: decisions.approved },
-      { type: "Отклонено", value: decisions.rejected },
-      { type: "На доработку", value: decisions.requestChanges },
+      { type: "Одобрено", value: approved },
+      { type: "Отклонено", value: rejected },
+      { type: "На доработку", value: requestChanges },
     ]
   }, [decisions])
 
-  const categoriesData = useMemo(() => {
-    if (!categories) return []
-    return Object.entries(categories).map(([name, value]) => ({
-      type: name || "Без категории",
-      value,
-    }))
-  }, [categories])
-
-  // Среднее время проверки сегодня
+  // Среднее время проверки (секунды или минуты)
   const formattedAverageTime = useMemo(() => {
     const avg = summary.today?.averageReviewTime
     if (!avg) return "–"
-    const totalMinutes = Math.floor(avg / 60)
-    const hours = Math.floor(totalMinutes / 60)
-    const minutes = totalMinutes % 60
-    return hours > 0 ? `${hours} ч ${minutes} мин` : `${minutes} мин`
+
+    if (avg < 60) {
+      return `${avg} сек`
+    } else {
+      const minutes = Math.floor(avg / 360000)
+      return `${minutes} мин`
+    }
   }, [summary.today])
 
   return {
     summary,
     activityData,
-    decisionsData,
-    categoriesData,
+    decisionsData: decisionsPercentages,
+    categoriesData: useMemo(() => {
+      if (!categories) return []
+      return Object.entries(categories).map(([name, value]) => ({
+        type: name || "Без категории",
+        value,
+      }))
+    }, [categories]),
     formattedAverageTime,
     loading,
   }

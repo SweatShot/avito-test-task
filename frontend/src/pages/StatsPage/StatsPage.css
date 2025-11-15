@@ -1,0 +1,105 @@
+:root {
+  --card-bg: #fff;
+  --card-border: #ccc;
+  --text-color: #000;
+  --text-secondary: rgba(0,0,0,0.65);
+  --badge-urgent: #e53935;
+  --badge-normal: #43a047;
+  --chart-grid: #e0e0e0;
+  --chart-tooltip-bg: #fff;
+  --chart-tooltip-color: #000;
+  --button-bg: #fff;
+  --button-border: #ccc;
+  --button-color: #000;
+}
+
+[data-theme="dark"] {
+  --card-bg: #1e1e1e;
+  --card-border: #333;
+  --text-color: #e0e0e0;
+  --text-secondary: rgba(224,224,224,0.65);
+  --badge-urgent: #ef5350;
+  --badge-normal: #66bb6a;
+  --chart-grid: #444;
+  --chart-tooltip-bg: #2a2a2a;
+  --chart-tooltip-color: #fff;
+  --button-bg: #333;
+  --button-border: #555;
+  --button-color: #e0e0e0;
+}
+
+.statsContainer {
+  padding: 20px;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 16px;
+  color: var(--text-color);
+  transition: all 0.3s;
+}
+
+.cardTitle {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.cardValue {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.buttonCustom {
+  background-color: var(--button-bg) !important;
+  border-color: var(--button-border) !important;
+  color: var(--button-color) !important;
+}
+
+.chartContainer {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.recharts-cartesian-grid line {
+  stroke: var(--chart-grid);
+}
+
+.recharts-tooltip-wrapper {
+  background: var(--chart-tooltip-bg) !important;
+  color: var(--chart-tooltip-color) !important;
+}
+
+.recharts-legend-item text {
+  fill: var(--text-color);
+}
+
+.statsCard {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.3s;
+}
+
+.statsCardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.statsCardValue {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--text-color);
+}
+
+.statsCardSmall {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 2px 0;
+}
