@@ -5,14 +5,16 @@ import Loader from "../../components/Loader/Loader";
 import InfoSection from "../../components/InfoSection/InfoSection";
 import ModerationModal from "./components/ModerationModal";
 import ModerationButtons from "./components/ModerationButtons";
-
-import { useItemNavigation } from "./hooks/useItemNavigation";
+import { BulkModerationControls } from "./components/BulkModerationControls";
 import { useModerationActions } from "./hooks/useModerationActions";
-
 import { useModerationDialogs } from "./hooks/useModerationDialogs";
 import { useModerationHotkeys } from "./hooks/useModerationHotkeys";
-
+import { useItemNavigation } from "./hooks/useItemNavigation";
 import AdHeader from "./components/AdHeader";
+
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "../../app/store/store";
+import { toggle } from "../../app/store/bulkSelectionSlice";
 
 export default function ItemPage() {
   const { id } = useParams<{ id: string }>();
@@ -21,21 +23,12 @@ export default function ItemPage() {
   const { data: allIds } = useGetAllIdsQuery();
   const { data: ad, isLoading, isError } = useGetAdByIdQuery(adId);
 
-  const {
-    showRejectModal,
-    showChangesModal,
-    openReject,
-    openChanges,
-    closeAll,
-    reason,
-    comment,
-    setReason,
-    setComment,
-  } = useModerationDialogs();
+  const { showRejectModal, showChangesModal, openReject, openChanges, closeAll, reason, comment, setReason, setComment } =
+    useModerationDialogs();
 
   const { goPrev, goNext, goList, currentIndex } = useItemNavigation(adId, allIds);
 
-  const { handleApprove, handleReject, handleRequestChanges } =
+  const { handleApprove, handleReject, handleRequestChanges, handleBulkApprove, handleBulkReject } =
     useModerationActions(adId, reason, comment, closeAll);
 
   useModerationHotkeys({
@@ -45,6 +38,9 @@ export default function ItemPage() {
     onPrev: goPrev,
     onList: goList,
   });
+
+  const dispatch = useDispatch();
+  const selectedIds = useSelector((state: RootState) => state.bulkSelection.selectedIds);
 
   if (isLoading) return <Loader />;
   if (isError || !ad) return <p>Ошибка загрузки</p>;
@@ -67,22 +63,28 @@ export default function ItemPage() {
     <div style={{ padding: 20 }}>
       <AdHeader
         ad={ad}
-        navigation={{
-          goPrev,
-          goNext,
-          goList,
-          currentIndex,
-          total: allIds?.length ?? 0,
-        }}
+        navigation={{ goPrev, goNext, goList, currentIndex, total: allIds?.length ?? 0 }}
       />
+
+      {/* Bulk controls */}
+      <BulkModerationControls
+        allIds={allIds ?? []}
+        onApprove={handleBulkApprove}
+        onReject={handleBulkReject}
+      />
+
+      {/* Чекбокс для текущего объявления */}
+      <div style={{ marginBottom: 10 }}>
+        <input
+          type="checkbox"
+          checked={selectedIds.includes(ad.id)}
+          onChange={() => dispatch(toggle(ad.id))}
+        /> Выбрать это объявление
+      </div>
 
       <InfoSection title="Характеристики" headers={["Название", "Значение"]} rows={characteristicsRows} />
       <InfoSection title="Продавец" headers={["Поле", "Значение"]} rows={sellerRows} />
-      <InfoSection
-        title="История модерации"
-        headers={["Модератор", "Дата", "Действие", "Комментарий"]}
-        rows={moderationRows}
-      />
+      <InfoSection title="История модерации" headers={["Модератор", "Дата", "Действие", "Комментарий"]} rows={moderationRows} />
 
       <ModerationButtons
         onApprove={handleApprove}

@@ -27,23 +27,49 @@ export const useModerationActions = (
   const [rejectAd] = useRejectAdMutation();
   const [requestChanges] = useRequestChangesMutation();
 
-  const handleApprove = async () => {
-    await approveAd(adId);
+  // Одобрение одного объявления
+  const handleApprove = async (id?: number) => {
+    await approveAd(id ?? adId);
     toast.addToast("Объявление одобрено", "success");
     onClose?.();
   };
 
-  const handleReject = async () => {
-    await rejectAd({ id: adId, reason, comment });
+  // Отклонение одного объявления
+  const handleReject = async (id?: number) => {
+    await rejectAd({ id: id ?? adId, reason, comment });
     toast.addToast("Объявление отклонено", "error");
     onClose?.();
   };
 
-  const handleRequestChanges = async () => {
-    await requestChanges({ id: adId, reason, comment });
+  // Запрос на доработку одного объявления
+  const handleRequestChanges = async (id?: number) => {
+    await requestChanges({ id: id ?? adId, reason, comment });
     toast.addToast("Запрос на доработку отправлен", "info");
     onClose?.();
   };
 
-  return { handleApprove, handleReject, handleRequestChanges };
+  // Bulk версии
+  const handleBulkApprove = async (ids: number[]) => {
+    await Promise.all(ids.map(id => handleApprove(id)));
+    onClose?.();
+  };
+
+  const handleBulkReject = async (ids: number[]) => {
+    await Promise.all(ids.map(id => handleReject(id)));
+    onClose?.();
+  };
+
+  const handleBulkRequestChanges = async (ids: number[]) => {
+    await Promise.all(ids.map(id => handleRequestChanges(id)));
+    onClose?.();
+  };
+
+  return {
+    handleApprove,
+    handleReject,
+    handleRequestChanges,
+    handleBulkApprove,
+    handleBulkReject,
+    handleBulkRequestChanges,
+  };
 };
