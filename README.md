@@ -395,7 +395,7 @@ export interface StatsQuery {
   startDate?: string; // YYYY-MM-DD
   endDate?: string;   // YYYY-MM-DD
 }
-```
+
 
 
 ## Основной компонент приложения (`App.tsx`)
