@@ -232,7 +232,11 @@ npm run start
 **Хуки для компонентов:**  
 ```ts
 useGetAdsQuery, useGetAdByIdQuery, useGetAllIdsQuery, 
-useApproveAdMutation, useRejectAdMutation, useRequestChangesMutation
+useApproveAdMutation, useRejectAdMutation, useRequestChangesMutation, 
+useGetCurrentModeratorQuery, useGetSummaryStatsQuery,
+useGetActivityChartQuery, useGetDecisionsChartQuery,
+useGetCategoriesChartQuery
+
 ```
 
 ## API строго типизировано через интерфейсы
